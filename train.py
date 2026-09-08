@@ -2,29 +2,27 @@
 Copyright (C) 2018 NVIDIA Corporation.  All rights reserved.
 Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 """
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "0" # Sets Pytorch to only see the first GPU
 from utils import get_all_data_loaders, prepare_sub_folder, write_html, write_loss, get_config, write_2images, Timer
 import argparse
-from torch.autograd import Variable
-from trainer import MUNIT_Trainer, UNIT_Trainer
-import torch.backends.cudnn as cudnn
+from trainer import UNIT_Trainer
 import torch
+
 try:
     from itertools import izip as zip
 except ImportError: # will be 3.x series
     pass
-import os
+
 import sys
 import tensorboardX
 import shutil
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--config', type=str, default='configs/edges2handbags_folder.yaml', help='Path to the config file.')
+parser.add_argument('--config', type=str, default='config configs/unit_soybean_list.yaml', help='Path to the config file.')
 parser.add_argument('--output_path', type=str, default='.', help="outputs path")
 parser.add_argument("--resume", action="store_true")
-parser.add_argument('--trainer', type=str, default='MUNIT', help="MUNIT|UNIT")
 opts = parser.parse_args()
-
-cudnn.benchmark = True
 
 # Load experiment setting
 config = get_config(opts.config)
@@ -33,12 +31,8 @@ display_size = config['display_size']
 config['vgg_model_path'] = opts.output_path
 
 # Setup model and data loader
-if opts.trainer == 'MUNIT':
-    trainer = MUNIT_Trainer(config)
-elif opts.trainer == 'UNIT':
-    trainer = UNIT_Trainer(config)
-else:
-    sys.exit("Only support MUNIT|UNIT")
+
+trainer = UNIT_Trainer(config)
 trainer.cuda()
 train_loader_a, train_loader_b, test_loader_a, test_loader_b = get_all_data_loaders(config)
 train_display_images_a = torch.stack([train_loader_a.dataset[i] for i in range(display_size)]).cuda()
